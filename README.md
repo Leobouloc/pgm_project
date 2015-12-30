@@ -2,27 +2,27 @@
 
 ### HOW TO
 
-CLONE : First time, clone the project
+*CLONE* : First time, clone the project
 
 ```
 git clone https://github.com/Leobouloc/pgm_project
 cd pgm_project
 ```
 
-PULL : After, to check for updates (do that before starting any new work)
+*PULL* : After, to check for updates (do that before starting any new work)
 
 ```
 git pull
 ```
 
-ADD FILES AND COMMIT CHANGES: You maybe created a new file and/or modified an existing one
+*ADD FILES AND COMMIT CHANGES*: You maybe created a new file and/or modified an existing one
 
 ```
 git add <name_of_new_file>
 git commit <name_of_modified_file> -m "<message describing modified or added file>"
 ```
 
-PUSH : (Make sure you commited before) You made some changes locally and want to sync them with github
+*PUSH* : (Make sure you commited before) You made some changes locally and want to sync them with github
 
 ```
 git push origin master
