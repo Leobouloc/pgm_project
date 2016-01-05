@@ -33,18 +33,20 @@ sigma_vq = std(v) * ones(num_dicts, 1);
 P4_mat = 1/num_freq * ones(num_freq, K, num_dicts) ; % P(f|z,q)
 P5_mat = 1/K * ones(T, K, num_dicts); % P(zt|qt)
 
-tic()
 
-% 2.1 - Compute likelihood (actually : log likelihood)
+% 2.1 - Compute likelihood (actually : log likelihood) (Vect)
+tic()
 P3_mat = zeros(T, num_dicts); % P(ft_bold, vt | qt)
-for t = 1:T
-   for qt = 1:num_dicts
-       P3_mat(t, qt) = P_vq(v(t), qt, mu_vq, sigma_vq); % first term
-       for ft = 1:num_freq
-           P3_mat(t, qt) = P3_mat(t, qt) * (P4_mat(ft, :, qt) * P5_mat(t, :, qt)') ^ Vft(t, ft);
-       end
+% first term
+for qt = 1:num_dicts
+   P3_mat(:, qt) = P_vq(v, qt, mu_vq, sigma_vq); 
+   for ft = 1:num_freq
+       P3_mat(:, qt) = P3_mat(:, qt)' .* (P4_mat(ft, :, qt) * P5_mat(:, :, qt)')'.^ Vft(:, ft)';
    end
 end
+toc()
+'1'
+tic()
 
 % 2.2 - Compute alpha, beta
 log_alpha = zeros(T, num_dicts);
@@ -71,9 +73,12 @@ for t = 1:T-1
         log_beta(T-t, qt) = max_val + log(1 + sum(exp(temp_but_max - max_val)));        
     end    
 end
+toc()
+'2'
+
 
 % 2.3 - Compute probabilites (P1_mat, P2_mat)
-
+tic()
 % Probability of having hidden state qt at time t
 p_qt = zeros(T,num_dicts);
 for t=1:T
@@ -93,29 +98,31 @@ for t=1:T-1
         end
     end
 end
-
-
-% P2_mat : P(zt, ft | qt)
+toc()
+'3'
+tic()
+% P2_mat : P(zt, ft | qt (Vect)
 P2_mat = zeros(T, K, num_freq, num_dicts);
-for t = 1:T
-    for ft = 1:num_freq
-       for qt = 1:num_dicts
-           P2_mat(t, :, ft, qt) = P5_mat(t, :, qt) .* P4_mat(ft, :, qt) / sum(P5_mat(t, :, qt) .* P4_mat(ft, :, qt));
-       end
-    end
+for ft = 1:num_freq
+   for qt = 1:num_dicts
+       temp = P5_mat(:, :, qt) .* repmat(P4_mat(ft, :, qt), T, 1);
+       P2_mat(:, :, ft, qt) = temp ./ repmat(sum(temp, 2), 1, K);
+   end
 end
-
+toc()
+'4'
+tic()
 % P1_mat : P(zt, qt | ft, f_bold, v_bold)
 P1_mat = zeros(T, K, num_dicts, num_freq);
-for t = 1:T
-    for ft = 1:num_freq
-       for qt = 1:num_dicts
-           P1_mat(t, :, ft, qt) = p_qt(t, qt) * P2_mat(t, :, ft, qt);
-       end
-    end
+for ft = 1:num_freq
+   for qt = 1:num_dicts
+       P1_mat(:, :, ft, qt) = repmat(p_qt(:, qt), 1, K) .* P2_mat(:, :, ft, qt);
+   end
 end
+toc()
+'5'
 
-
+tic()
 % Update P4_mat
 P4_mat = zeros(num_freq, K, num_dicts) ; % P(f|z,q)
 for zt = 1:K
@@ -126,19 +133,20 @@ for zt = 1:K
         P4(:, zt, qt) = P4(:, zt, qt) / sum(P4(:, zt, qt));
     end
 end
+toc()
+'6'
 
-
+tic()
 % Update P5_mat
 P5_mat = zeros(T, K, num_dicts); % p(z|q)
-for t=1:T
-    for qt = 1:num_dicts
-        for zt = 1:K
-            P5_mat(t, zt, qt) = Vft(t,:) * squeeze(P1_mat(t, zt, qt, :));
-        end
-        P5_mat(t, :, qt) = P5_mat(t, :, qt) / sum(P5_mat(t, :, qt));
+for qt = 1:num_dicts
+    for zt = 1:K
+        P5_mat(:, zt, qt) = sum(Vft .* squeeze(P1_mat(:, zt, qt, :)), 2);
     end
+    P5_mat(:, :, qt) = P5_mat(:, :, qt) ./ repmat(sum(P5_mat(:, :, qt), 2), 1, K);
 end
-
+toc()
+'7'
 % Update pi (start probability)
 for q=1:K
     pi(q) = p_qt(1,q) / sum(p_qt(1,:));
