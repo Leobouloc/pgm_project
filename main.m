@@ -16,7 +16,7 @@
 clear all
 
 % Set Parameters
-T = 50; % Number of time frames
+T = 1000; % Number of time frames
 K = 10; % Number of vectors per dictionary ; num latent components ; num phonems
 num_dicts = 40; % Number of dictionaries
 num_freq = 100; % Number of frequencies in spectrogram
