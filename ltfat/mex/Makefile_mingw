@@ -1,0 +1,49 @@
+# To run this makefile, you must provide your system specific EXT and MATLABROOT
+# variables on the command line e.g.:
+#
+# make -f Makefile_mingw64 MATLABROOT="C:\Program Files\MATLAB\R2011b"  EXT=mexw64 ARCH=win64
+
+ifndef MATLABROOT
+  $(warning MATLABROOT variable is udefined. Using default MATLABROOT="C:\Program Files\MATLAB\R2011b" )
+  MATLABROOT=C:\Program Files\MATLAB\R2011b
+endif
+
+ifndef EXT
+  $(warning EXT variable is udefined. Using default EXT=mexw64 )
+  EXT=mexw64
+endif
+
+ifndef ARCH
+  $(warning ARCH variable is udefined. Using default ARCH=win64 )
+  ARCH=win64
+endif
+
+ifndef DFFTW
+   DFFTW=-lfftw3-3
+endif
+
+ifndef SFFTW
+   SFFTW=-lfftw3f-3
+endif
+
+CFLAGS=-O3 -shared -s -Wall -std=c99 -I../src/thirdparty -I../src -fvisibility=hidden
+
+include filedefs.mk
+include ../src/ostools.mk
+
+MEXBASE = $(MEXBASESAFE) $(MEXBASEMORE)
+MEXS    = $(addsuffix .$(EXT),$(MEXBASE))
+
+MEXCOMPFLAGS=-I"$(MATLABROOT)\extern\include" 
+MEXLINKFLAGS=-static-libgcc -Wl,--dll -L"$(MATLABROOT)\bin\$(ARCH)" \
+			 -lmex -lmx -lmwlapack -lmwblas 
+
+all: $(MEXS)
+
+$(MEXS): %.$(EXT): %.c 
+	$(CC) $(CFLAGS) $(MEXCOMPFLAGS) $< -o $@ -L./ $(DFFTW) $(SFFTW) -lltfat -lltfatf $(MEXLINKFLAGS)
+
+clean: 
+	$(RM) *.$(EXT)
+
+.PHONY: all clean

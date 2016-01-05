@@ -1,0 +1,35 @@
+ifndef MATLABROOT
+  $(warning MATLABROOT variable is udefined. Using default MATLABROOT="/Applications/MATLAB_R2013a.app/")
+  MATLABROOT=/Applications/MATLAB_R2013a.app/
+endif
+
+ifndef EXT
+  $(warning EXT variable is udefined. Using default EXT=mexmaci64)
+  EXT=mexmaci64
+endif
+
+ifndef ARCH
+  $(warning ARCH variable is udefined. Using default ARCH=maci64 )
+  ARCH=maci64
+endif
+
+ifndef PORTAUDIO
+  PORTAUDIO=-lportaudio
+endif
+
+include ../../src/ostools.mk
+
+MEXTGT=playrec.$(EXT)
+MEXSRC=mex_dll_core.c pa_dll_playrec.c
+LIBS= -L. -L"$(MATLABROOT)/bin/$(ARCH)" -lmex -lmx $(PORTAUDIO) 
+	  
+INCLUDES= -I"$(MATLABROOT)/extern/include" -I. -I../../src/thirdparty
+CFLAGS=-fPIC -std=c99 -O3 -Wall -shared -DMATLAB_MEX_FILE
+
+all:
+	$(CC) $(CFLAGS) $(INCLUDES) $(MEXSRC) $(LIBS) -o $(MEXTGT) 
+
+clean:
+	$(RM) $(MEXTGT)
+
+.PHONY: all clean
