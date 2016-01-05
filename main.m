@@ -17,15 +17,21 @@ clear all
 
 % Data
 [Vft, Vft2, int_test_spectrogram1, int_test_spectrogram2, int_mixture_spectrogram] = load_data(0);
-Vft = single(Vft');
-Vft2 = single(Vft2');
-v = sum(Vft, 2); % Observed energy
+Vft = double(Vft');
+Vft2 = double(Vft2');
 
 % Set Parameters
-T = size(Vft, 1); % Number of time frames
+T = size(Vft, 1); % Number of time frames (remove +1 if no white noise)
 K = 2; % Number of vectors per dictionary ; num latent components ; num phonems
 num_dicts = 20; % Number of dictionaries
 num_freq = size(Vft, 2); % Number of frequencies in spectrogram
+
+% Adding white noise at end to avoid zero probabilities
+Vft(T + 1, :) = 1; % WARNING : change T if you remove this
+T = T+1;
+
+% Compute Energy
+v = sum(Vft, 2); % Observed energy
 
 
 % 1 - Initialise transition probabilites
@@ -44,7 +50,7 @@ tic()
 P3_mat = zeros(T, num_dicts); % P(ft_bold, vt | qt)
 % first term
 for qt = 1:num_dicts
-   P3_mat(:, qt) = log(P_vq(v, qt, mu_vq, sigma_vq)); 
+       P3_mat(:, qt) = log(P_vq(v, qt, mu_vq, sigma_vq)); 
    for ft = 1:num_freq
        P3_mat(:, qt) = P3_mat(:, qt)' +  Vft(:, ft)' .* log((P4_mat(ft, :, qt) * P5_mat(:, :, qt)'));
    end
@@ -107,7 +113,7 @@ toc()
 
 %tic()
 % P2_mat : P(zt, ft | qt (Vect)
-P2_mat = zeros(T, K, num_freq, num_dicts, 'single');
+P2_mat = zeros(T, K, num_freq, num_dicts, 'double');
 for ft = 1:num_freq
    for qt = 1:num_dicts
        temp = P5_mat(:, :, qt) .* repmat(P4_mat(ft, :, qt), T, 1);
@@ -118,7 +124,7 @@ toc()
 '4'
 %tic()
 % P1_mat : P(zt, qt | ft, f_bold, v_bold)
-P1_mat = zeros(T, K, num_dicts, num_freq, 'single');
+P1_mat = zeros(T, K, num_dicts, num_freq, 'double');
 for ft = 1:num_freq
    for qt = 1:num_dicts
        P1_mat(:, :, qt, ft) = repmat(p_qt(:, qt), 1, K) .* P2_mat(:, :, ft, qt);
@@ -166,3 +172,8 @@ for q1=1:num_dicts
 end
 toc()
 
+sum(sum(sum(sum(P1_mat== 0))))
+sum(sum(sum(sum(P2_mat== 0))))
+sum(sum(sum(sum(P3_mat== 0))))
+sum(sum(sum(sum(P4_mat== 0))))
+sum(sum(sum(sum(P5_mat== 0))))
