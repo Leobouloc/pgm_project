@@ -1,5 +1,5 @@
 function [int_train_spectrogram1, int_train_spectrogram2, ...
-          int_test_spectrogram1, int_test_spectrogram2, int_mixture_spectrogram] = load_data(display_bool)
+          int_test_spectrogram1, int_test_spectrogram2, int_mixture_spectrogram, int_size] = load_data(display_bool)
 
 close all
 
@@ -13,7 +13,7 @@ ltfatstart; % used for fast STFT
 int_size = 8;
 %int_size = 16;
 
-training_samples_proportion = 0; % proportion of training samples to use (0 means no shuffle)
+training_samples_proportion = 0.05; % proportion of training samples to use (0 means no shuffle)
 randomize_mixture_order = true;
 
 training_folder = '../PCCdata16kHz_train/train/reverberated/';
