@@ -1,5 +1,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Non Negative Hiddem Markov Model of Audio with Source Separation
+% Non Negative Hidden Markov Model of Audio with Source Separation
 
 % NB : We tried to keep the same notations as in the original paper
 %       Probabilites are numbered according to the number in the paper
@@ -34,7 +34,7 @@ P4_mat = 1/num_freq * ones(num_freq, K, num_dicts) ; % P(f|z,q)
 P5_mat = 1/K * ones(T, K, num_dicts); % P(zt|qt)
 
 
-% 2.1 - Compute likelihood (actually : log likelihood) (Vect)
+% 2.1 - Compute likelihood (Vect)
 tic()
 P3_mat = zeros(T, num_dicts); % P(ft_bold, vt | qt)
 % first term
@@ -46,7 +46,7 @@ for qt = 1:num_dicts
 end
 toc()
 '1'
-tic()
+%tic()
 
 % 2.2 - Compute alpha, beta
 log_alpha = zeros(T, num_dicts);
@@ -78,7 +78,7 @@ toc()
 
 
 % 2.3 - Compute probabilites (P1_mat, P2_mat)
-tic()
+%tic()
 % Probability of having hidden state qt at time t
 p_qt = zeros(T,num_dicts);
 for t=1:T
@@ -100,7 +100,7 @@ for t=1:T-1
 end
 toc()
 '3'
-tic()
+%tic()
 % P2_mat : P(zt, ft | qt (Vect)
 P2_mat = zeros(T, K, num_freq, num_dicts);
 for ft = 1:num_freq
@@ -111,7 +111,7 @@ for ft = 1:num_freq
 end
 toc()
 '4'
-tic()
+%tic()
 % P1_mat : P(zt, qt | ft, f_bold, v_bold)
 P1_mat = zeros(T, K, num_dicts, num_freq);
 for ft = 1:num_freq
@@ -122,7 +122,7 @@ end
 toc()
 '5'
 
-tic()
+%tic()
 % Update P4_mat
 P4_mat = zeros(num_freq, K, num_dicts) ; % P(f|z,q)
 for zt = 1:K
@@ -136,7 +136,7 @@ end
 toc()
 '6'
 
-tic()
+%tic()
 % Update P5_mat
 P5_mat = zeros(T, K, num_dicts); % p(z|q)
 for qt = 1:num_dicts
@@ -158,6 +158,5 @@ for q1=1:K
         A(q1,q2) = sum(p_qt_qt_plus_one(:, q1,q2)) / sum(sum(p_qt_qt_plus_one(:,q1,:)));
     end
 end
-
-
 toc()
+
