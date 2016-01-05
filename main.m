@@ -134,9 +134,9 @@ P4_mat = zeros(num_freq, K, num_dicts) ; % P(f|z,q)
 for zt = 1:K
     for qt = 1:num_dicts
         for f = 1:num_freq
-            P4(f, zt, qt) = Vft(:, f)' * P1_mat(:, zt, qt, f);
+            P4_mat(f, zt, qt) = Vft(:, f)' * P1_mat(:, zt, qt, f);
         end
-        P4(:, zt, qt) = P4(:, zt, qt) / sum(P4(:, zt, qt));
+        P4_mat(:, zt, qt) = P4_mat(:, zt, qt) / sum(P4_mat(:, zt, qt));
     end
 end
 toc()
