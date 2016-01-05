@@ -31,15 +31,17 @@ A = ones(num_dicts, num_dicts); % State transition
 mu_vq = mean(v) * ones(num_dicts, 1); % Average power
 sigma_vq = std(v) * ones(num_dicts, 1);
 P4_mat = 1/num_freq * ones(num_freq, K, num_dicts) ; % P(f|z,q)
-P5_mat = 1/K * ones(K, num_dicts); % P(zt|qt)
+P5_mat = 1/K * ones(T, K, num_dicts); % P(zt|qt)
+
+tic()
 
 % 2.1 - Compute likelihood (actually : log likelihood)
 P3_mat = zeros(T, num_dicts); % P(ft_bold, vt | qt)
 for t = 1:T
    for qt = 1:num_dicts
-       P3_mat(t, qt) = log(P_vq(v(t), qt, mu_vq, sigma_vq)); % first term
+       P3_mat(t, qt) = P_vq(v(t), qt, mu_vq, sigma_vq); % first term
        for ft = 1:num_freq
-           P3_mat(t, qt) = P3_mat(t, qt) + Vft(t, ft) * log(sum(P4_mat(ft, :, qt)' + P5_mat(:, qt)));
+           P3_mat(t, qt) = P3_mat(t, qt) * (P4_mat(ft, :, qt) * P5_mat(t, :, qt)') ^ Vft(t, ft);
        end
    end
 end
@@ -56,14 +58,14 @@ for t = 2:T
         temp = log(A(:, qt)') + log_alpha(t-1, :);
         [max_val, max_ind] = max(temp);
         temp_but_max = [temp(1:max_ind-1), temp(max_ind+1:end)];      
-        log_alpha(t, qt) = P3_mat(t, qt) ...
+        log_alpha(t, qt) = log(P3_mat(t, qt)) ...
                     + max_val + log(1 + sum(exp(temp_but_max - max_val)));
     end
 end
 
 for t = 1:T-1
     for qt=1:num_dicts
-        temp = (log(A(qt, :)') + P3_mat(T-t, :)' + log_beta(T-t+1, :)')';
+        temp = (log(A(qt, :)') + log(P3_mat(T-t, :)') + log_beta(T-t+1, :)')';
         [max_val, max_ind] = max(temp);
         temp_but_max = [temp(1:max_ind-1), temp(max_ind+1:end)];
         log_beta(T-t, qt) = max_val + log(1 + sum(exp(temp_but_max - max_val)));        
@@ -87,44 +89,55 @@ for t=1:T-1
     for qt = 1:num_dicts
         for qt_plus_one = 1:num_dicts
             p_qt_qt_plus_one(t, qt, qt_plus_one) = 1/sum(exp(log_alpha(t,:) + log_beta(t,:) - log_alpha(t,qt) - log_beta(t+1, qt_plus_one)))...
-                     * A(qt, qt_plus_one) * exp(P3_mat(t+1, qt_plus_one));
+                     * A(qt, qt_plus_one) * P3_mat(t+1, qt_plus_one);
         end
     end
 end
 
 
 % P2_mat : P(zt, ft | qt)
-P2_mat = zeros(K, num_freq, num_dicts);
-for ft = 1:num_freq
-   for qt = 1:num_dicts
-       P2_mat(:, ft, qt) = P5_mat(:, qt) .* P4_mat(ft, :, qt)' / sum(P5_mat(:, qt) .* P4_mat(ft, :, qt)');
-   end
+P2_mat = zeros(T, K, num_freq, num_dicts);
+for t = 1:T
+    for ft = 1:num_freq
+       for qt = 1:num_dicts
+           P2_mat(t, :, ft, qt) = P5_mat(t, :, qt) .* P4_mat(ft, :, qt) / sum(P5_mat(t, :, qt) .* P4_mat(ft, :, qt));
+       end
+    end
 end
 
 % P1_mat : P(zt, qt | ft, f_bold, v_bold)
-P1_mat = zeros(K, num_dicts, num_freq);
-for ft = 1:num_freq
-   for qt = 1:num_dicts
-       P1_mat(:, ft, qt) = p_qt(1, qt) * P2_mat(:, ft, qt);
-   end
+P1_mat = zeros(T, K, num_dicts, num_freq);
+for t = 1:T
+    for ft = 1:num_freq
+       for qt = 1:num_dicts
+           P1_mat(t, :, ft, qt) = p_qt(t, qt) * P2_mat(t, :, ft, qt);
+       end
+    end
 end
 
 
 % Update P4_mat
 P4_mat = zeros(num_freq, K, num_dicts) ; % P(f|z,q)
-for z = 1:K
+for zt = 1:K
     for qt = 1:num_dicts
         for f = 1:num_freq
-            P4(f, z, q) = Vft(:, f)
+            P4(f, zt, qt) = Vft(:, f)' * P1_mat(:, zt, qt, f);
         end
+        P4(:, zt, qt) = P4(:, zt, qt) / sum(P4(:, zt, qt));
     end
-    
 end
 
 
 % Update P5_mat
-
-
+P5_mat = zeros(T, K, num_dicts); % p(z|q)
+for t=1:T
+    for qt = 1:num_dicts
+        for zt = 1:K
+            P5_mat(t, zt, qt) = Vft(t,:) * squeeze(P1_mat(t, zt, qt, :));
+        end
+        P5_mat(t, :, qt) = P5_mat(t, :, qt) / sum(P5_mat(t, :, qt));
+    end
+end
 
 % Update pi (start probability)
 for q=1:K
@@ -139,3 +152,4 @@ for q1=1:K
 end
 
 
+toc()
