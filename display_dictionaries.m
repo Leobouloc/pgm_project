@@ -2,6 +2,7 @@ function display_dictionaries(P4_mat, sr)
 %DISPLAY_DICTIONARIES displays dictionaries from probabilities stores in
 %matrix P4_mat = p(f|z, q) with size num_freq x K x num_dicts
 
+sr = 16000;
 num_freq = size(P4_mat, 1);
 K = size(P4_mat, 2);
 num_dicts = size(P4_mat, 3);
@@ -13,10 +14,14 @@ subplot1(1, num_dicts);
 for q = 1:num_dicts
     subplot1(q);
     imagesc(1:K, f_range, 20*log(abs(P4_mat(:, :, q)))); % displayed in magnitude
-    axis([1 K 0 sr/2]);
+    axis([0.5 (K + 0.5) 0 sr/2]);
     set(gca,'YDir','normal');
     drawnow;
+    if q == round(num_dicts / 2)
+        title('Dictionaries Learned', 'FontWeight', 'bold')
+    end
 end
+
 
 end
 

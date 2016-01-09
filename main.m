@@ -25,7 +25,7 @@ Vft = double(Vft');
 % Set Parameters
 T = size(Vft, 1); % Number of time frames (remove +1 if no white noise)
 K = 4; % Number of vectors per dictionary ; num latent components ; num phonems
-num_dicts = 6; % Number of dictionaries
+num_dicts = 16; % Number of dictionaries
 num_freq = size(Vft, 2); % Number of frequencies in spectrogram
 
 % Adding white noise at end to avoid zero probabilities
@@ -39,7 +39,7 @@ Vft(all(Vft == 0, 2), :) = 1;
 v = sum(Vft, 2); % Observed energy
 
 % For smoothing
-my_epsilon = 10^-15;
+my_epsilon = 10^-10;
 
 % 1 - Initialise transition probabilites
 pi = log(1/num_dicts * ones(num_dicts, 1)); % Initial state
@@ -55,7 +55,7 @@ P5_mat = P5_mat ./ repmat(sum(P5_mat, 2), 1, K, 1);
 
 log_likelihoods = [];
 
-num_iterations = 100;
+num_iterations = 20;
 for xxx = 1:num_iterations
     tic()
     fprintf('***********************************\n - At iteration %d\n', xxx)
@@ -272,7 +272,7 @@ for xxx = 1:num_iterations
     
     % Update sigma_vq
     for q=1:num_dicts
-        sigma_vq(:) = (sqrt(sum(exp(p_qt).*((repmat(v, 1, num_dicts) - repmat(mu_vq', T, 1)).^2)) ./ sum(exp(p_qt))))';
+        sigma_vq(q) = sqrt(sum(exp(p_qt(:, q)).* (v - mu_vq(q)).^2) ./ sum(exp(p_qt(:, q))));
     end   
     
     % Update pi (start probability)
@@ -316,6 +316,11 @@ for xxx = 1:num_iterations
     toc()
 
 end
+
+surf(exp(A));
+view(0,90)
+colormap gray
+title('Transition Matrix A (between phonemes)', 'FontWeight', 'bold')
 
 plot(log_likelihoods)
 title('Evolution of Log-Likelihood', 'FontWeight', 'bold')
