@@ -8,27 +8,27 @@
 clear all
 
 % Data (generate and save: 1, or load from save: 0)
-generate = 0;
+generate = 1;
 if generate
-    [Vft1, Vft2, Vft1_test, Vft2_test, Vft12_test] = load_data(0);
+    
+[Vft1, train_audio1, Vft2, train_audio2, ...
+  Vft1_test, test_audio1, Vft2_test, test_audio2, ...
+  Vft, audio_mixture, ...
+  int_size, Vft_complex, sr, g, hop_size, window_size] = load_data(0);
+
     Vft1 = double(Vft1');
     Vft2 = double(Vft2');
     Vft1_test = double(Vft1_test');
     Vft2_test = double(Vft2_test');
-    %Vft12_test = double(Vft12_test');
-    Vft12_test = Vft1_test + Vft2_test;
+    Vft = double(Vft');
     
-    save('Vft1.mat', 'Vft1');
-    save('Vft2.mat', 'Vft2');
-    save('Vft1_test.mat', 'Vft1_test');
-    save('Vft2_test.mat', 'Vft2_test');
-    save('Vft12_test.mat', 'Vft12_test');
+    save('data_for_separation.mat', 'Vft1', 'train_audio1', 'Vft2', 'train_audio2', ...
+                                  'Vft1_test', 'test_audio1', 'Vft2_test', 'test_audio2', ...
+                                  'Vft', 'audio_mixture', ...
+                                  'int_size', 'Vft_complex', 'sr', 'g', ...
+                                  'hop_size', 'window_size')
 else
-    load('Vft1.mat');
-    load('Vft2.mat');
-    load('Vft1_test.mat');
-    load('Vft2_test.mat');
-    load('Vft12_test.mat');
+    load('data_for_separation.mat')
 end
 
 % Pre-process Vft
@@ -36,7 +36,7 @@ Vft1 = preprocess_Vft(Vft1);
 Vft2 = preprocess_Vft(Vft2);
 Vft1_test = preprocess_Vft(Vft1_test);
 Vft2_test = preprocess_Vft(Vft2_test);
-Vft12_test = preprocess_Vft(Vft12_test);
+Vft = preprocess_Vft(Vft);
 
 
 % Set Parameters
@@ -54,19 +54,15 @@ verbose = 1;
 
 
 %%%%
-compute_single_EM = 0;
+compute_single_EM = 1;
 if compute_single_EM
     % Actual EM single source here
     [P4_mat1, ~, mu_vq1, sigma_vq1, A1, Pi1, log_likelihoods1, T1, num_freq1] = EM_single_source(Vft1, K, num_dicts, num_iterations_single_source, my_epsilon, verbose);
-    save('profile1.mat', 'P4_mat1', 'mu_vq1', 'sigma_vq1', 'A1', 'T1', 'num_freq1')
-    clear Pi1
-
     [P4_mat2, ~, mu_vq2, sigma_vq2, A2, Pi2, log_likelihoods2, T2, num_freq2] = EM_single_source(Vft2, K, num_dicts, num_iterations_single_source, my_epsilon, verbose);
-    save('profile2.mat', 'P4_mat2', 'mu_vq2', 'sigma_vq2', 'A2',  'T2', 'num_freq2')
-    clear Pi2
+    save('profiles.mat', 'P4_mat1', 'mu_vq1', 'sigma_vq1', 'A1', 'T1', 'num_freq1', 'P4_mat2', 'mu_vq2', 'sigma_vq2', 'A2',  'T2', 'num_freq2')
+    clear Pi1 Pi2
 else
-    load('profile1.mat');
-    load('profile2.mat');
+    load('profiles.mat');
 end
 %%%%
 
@@ -272,21 +268,21 @@ end % end loop
 p_final = zeros(T, num_sources, num_freq); % p(st|ft)
 
 % s = 1
-p_final_part_1 = permute(repmat(P11_mat(:, :, 1, :, :), 1,1,num_freq), [1,3,2,4,5]);
-p_final_part_2 = permute(repmat(P4_mat1, 1, 1, 1, num_dicts, T), [5,1,2,3,4]);
-p_final(:, 1, :) = sum(sum(permute(repmat(exp(p_q1_q2), 1, 1, 1, num_freq), [1, 4, 2, 3]) .* squeeze(sum(p_final_part_1 .* p_final_part_2, 3)), 4),3); 
+P_final_part_1 = permute(repmat(P11_mat(:, :, 1, :, :), 1,1,num_freq), [1,3,2,4,5]);
+P_final_part_2 = permute(repmat(P4_mat1, 1, 1, 1, num_dicts, T), [5,1,2,3,4]);
+P_final(:, 1, :) = sum(sum(permute(repmat(exp(p_q1_q2), 1, 1, 1, num_freq), [1, 4, 2, 3]) .* squeeze(sum(P_final_part_1 .* P_final_part_2, 3)), 4),3); 
 
 % s = 2
-p_final_part_1 = permute(repmat(P11_mat(:, :, 2, :, :), 1,1,num_freq), [1,3,2,4,5]);
-p_final_part_2 = permute(repmat(P4_mat2, 1, 1, 1, num_dicts, T), [5,1,2,4,3]);
-p_final(:, 2, :) = sum(sum(permute(repmat(exp(p_q1_q2), 1, 1, 1, num_freq), [1, 4, 2, 3]) .* squeeze(sum(p_final_part_1 .* p_final_part_2, 3)), 4),3); 
+P_final_part_1 = permute(repmat(P11_mat(:, :, 2, :, :), 1,1,num_freq), [1,3,2,4,5]);
+P_final_part_2 = permute(repmat(P4_mat2, 1, 1, 1, num_dicts, T), [5,1,2,4,3]);
+P_final(:, 2, :) = sum(sum(permute(repmat(exp(p_q1_q2), 1, 1, 1, num_freq), [1, 4, 2, 3]) .* squeeze(sum(P_final_part_1 .* P_final_part_2, 3)), 4),3); 
 clear p_final_part_1 p_final_part_2
 
-p_final = p_final ./ repmat(sum(p_final, 2), 1, 2);
+P_final = P_final ./ repmat(sum(P_final, 2), 1, 2);
 
 
-save('my_separation.mat', 'Vft1_test', 'Vft2_test', 'Vft', 'p_final')
-
+save('my_separation.mat', 'Vft1_test', 'Vft2_test', 'Vft', 'P_final')
+mixture_weights_to_audio(squeeze(P_final(1:T-1, 1, :)), Vft_complex, sr, g, hop_size, window_size)
 
 
 if false

@@ -12,8 +12,8 @@ ltfatstart; % used for fast STFT
 % Options %
 %%%%%%%%%%%
 
-int_size = 8;
-%int_size = 16;
+%int_size = 8;
+int_size = 16;
 
 training_samples_proportion = 0.01; % proportion of training samples to use (0 means no shuffle)
 test_samples_proportion = 0.5;
