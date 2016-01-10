@@ -1,5 +1,5 @@
-function [mixture_spectrogram, audio_mixture, ...
-          spectrogram1, audio1, spectrogram2, audio2, sr, T] = ...
+function [mixture_spectrogram, complex_mixture_spectrogram, audio_mixture, ...
+          spectrogram1, audio1, spectrogram2, audio2, sr, T, g, hop_size, window_size] = ...
           merge_test_sounds(speaker1_id, speaker2_id, test_folder, randomize_bool, test_samples_proportion)
 %MERGE_TEST_SOUNDS
 
@@ -30,13 +30,13 @@ hop_size = window_size/4;
 g = gabwin({'tight', 'hann'}, hop_size, window_size, window_size);
 [G1, ~] = dgtreal(audio1, g, hop_size, window_size);
 [G2, ~] = dgtreal(audio2, g, hop_size, window_size);
-G = dgtreal(audio_mixture, g, hop_size, window_size);
+complex_mixture_spectrogram = dgtreal(audio_mixture, g, hop_size, window_size);
 
 spectrogram1 = abs(G1);
 %spectrogram1 = 20*log(abs(G1));
 spectrogram2 = abs(G2);
 %spectrogram2 = 20*log(abs(G2));
-mixture_spectrogram = abs(G);
+mixture_spectrogram = abs(complex_mixture_spectrogram);
 %mixture_spectrogram = 20*log(abs(G));
 
 end
