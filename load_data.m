@@ -13,7 +13,8 @@ ltfatstart; % used for fast STFT
 int_size = 8;
 %int_size = 16;
 
-training_samples_proportion = 0.05; % proportion of training samples to use (0 means no shuffle)
+training_samples_proportion = 0.01; % proportion of training samples to use (0 means no shuffle)
+test_samples_proportion = 0.5;
 randomize_mixture_order = true;
 
 training_folder = '../PCCdata16kHz_train/train/reverberated/';
@@ -29,7 +30,7 @@ end
 % Parameters %
 %%%%%%%%%%%%%%
 
-speaker1 = 1; % male
+speaker1 = 8; % male
 speaker2 = 25; % Emma <3
 
 %%%%%%%%%%%%%%%%%
@@ -67,7 +68,7 @@ end
 % Test data %
 %%%%%%%%%%%%%
 
-[mixture_spectrogram, audio_mixture, test_spectrogram1, test_audio1, test_spectrogram2, test_audio2, sr, T] = merge_test_sounds(speaker1, speaker2, test_folder, randomize_mixture_order);
+[mixture_spectrogram, audio_mixture, test_spectrogram1, test_audio1, test_spectrogram2, test_audio2, sr, T] = merge_test_sounds(speaker1, speaker2, test_folder, randomize_mixture_order, test_samples_proportion);
 
 if display
     % Listen to the sounds (plays all at once, 'clear all' to stop)

@@ -1,10 +1,10 @@
 function [mixture_spectrogram, audio_mixture, ...
           spectrogram1, audio1, spectrogram2, audio2, sr, T] = ...
-          merge_test_sounds(speaker1_id, speaker2_id, test_folder, randomize_bool)
+          merge_test_sounds(speaker1_id, speaker2_id, test_folder, randomize_bool, test_samples_proportion)
 %MERGE_TEST_SOUNDS
 
-[audio1, sr1] = get_test_audio(speaker1_id, test_folder, randomize_bool);
-[audio2, sr2] = get_test_audio(speaker2_id, test_folder, randomize_bool);
+[audio1, sr1] = get_test_audio(speaker1_id, test_folder, randomize_bool, test_samples_proportion);
+[audio2, sr2] = get_test_audio(speaker2_id, test_folder, randomize_bool, test_samples_proportion);
 
 if sr1 == sr2
     sr = sr1;
@@ -41,17 +41,18 @@ mixture_spectrogram = abs(G);
 
 end
 
-function [y, sr] = get_test_audio(speaker_id, test_folder, randomize_bool)
+function [y, sr] = get_test_audio(speaker_id, test_folder, randomize_bool, proportion)
 %GET_TRAINING_WAV
 
 prefix = [test_folder, 's', int2str(speaker_id)];
 
 files = dir([prefix, '_*.wav']);
+nb_files = length(files);
 if randomize_bool
-    permutation = randperm(length(files));
+    permutation = randsample(nb_files, ceil(proportion*nb_files), false);
     perm_files = files(permutation);
 else
-    perm_files = files;
+    perm_files = files(1:ceil(proportion*nb_files));
 end
 
 y = [];
