@@ -102,125 +102,167 @@ P11_mat = P11_mat ./ repmat(sum(sum(P11_mat, 2), 3), 1, K, num_sources);
 
 
 % Compute log_likelihood
-tic()
-P10_mat = zeros(T, num_dicts, num_dicts); % P(ft_bold, vt | qt)
-% first term
-for q1 = 1:num_dicts
-    for q2 = 1:num_dicts
-       P10_mat(:, q1, q2) = log(p_vq1q2(v, q1, q2, mu_vq1, mu_vq2,sigma_vq1, sigma_vq2)); 
-       for ft = 1:num_freq
-           P10_mat(:, q1, q2) = P10_mat(:, q1, q2)' +  Vft(:, ft)' .* log((P4_mat1(ft, :, q1) * P11_mat(:,:, 1, q1, q2)' + P4_mat2(ft, :, q2) * P11_mat(:,:, 2, q1, q2)' ));
-           if any(P10_mat(:, q1, q2) == -Inf)
-                var_break = 1
-                assert(0)
-           end
-       end
-    end
-end
-toc()
-'1'
+log_likelihoods = [];
 
-
-% 2.2 - Compute alpha, beta
-log_alpha = zeros(T, num_dicts, num_dicts);
-log_beta = zeros(T, num_dicts, num_dicts);
-
-log_alpha(1, :, :) = repmat(Pi1, 1, num_dicts) + repmat(Pi2', num_dicts, 1) + squeeze(P10_mat(1, :, :))';
-log_beta(T, :, :) = log(1);
-
-var_break = 0;
-for t = 2:T
+num_iterations = 5;
+for xxx = 1:num_iterations
+    fprintf('*****************\n')
+    tic()
+    P10_mat = zeros(T, num_dicts, num_dicts); % P(ft_bold, vt | qt)
+    % first term
     for q1 = 1:num_dicts
         for q2 = 1:num_dicts
-            temp = repmat(A1(:, q1), 1, num_dicts) + repmat(A2(:, q2)', num_dicts, 1) + squeeze(log_alpha(t-1, :, :)); % WARNING MIGHT HAVE TO INVERSE TRANSPOSE
-            temp = reshape(temp, num_dicts * num_dicts, 1)';
-            [max_val, max_ind] = max(temp);
-            temp_but_max = [temp(1:max_ind-1), temp(max_ind+1:end)];  
+           P10_mat(:, q1, q2) = log(p_vq1q2(v, q1, q2, mu_vq1, mu_vq2,sigma_vq1, sigma_vq2)); 
+           for ft = 1:num_freq
+               P10_mat(:, q1, q2) = P10_mat(:, q1, q2)' +  Vft(:, ft)' .* log((P4_mat1(ft, :, q1) * P11_mat(:,:, 1, q1, q2)' + P4_mat2(ft, :, q2) * P11_mat(:,:, 2, q1, q2)' ));
+           end
+        end
+    end
+    if any(any(any(any(any(any(P10_mat == -Inf))))))
+        'log_beta has -Inf'
+        assert(false)
+    end    
+    if any(any(any(any(any(any(isnan(P10_mat)))))))
+        'log_beta has NaN'
+        assert(false)
+    end
 
-            log_alpha(t, q1, q2) = P10_mat(t, q1, q2) ...
-                        + max_val + log(1 + sum(exp(temp_but_max - max_val)));
-            if isnan(log_alpha(t, q1, q2))
-                assert(0)
+
+    % 2.2 - Compute alpha, beta
+    log_alpha = zeros(T, num_dicts, num_dicts);
+    log_beta = zeros(T, num_dicts, num_dicts);
+
+    log_alpha(1, :, :) = repmat(Pi1, 1, num_dicts) + repmat(Pi2', num_dicts, 1) + squeeze(P10_mat(1, :, :))';
+    log_beta(T, :, :) = log(1);
+
+    var_break = 0;
+    for t = 2:T
+        for q1 = 1:num_dicts
+            for q2 = 1:num_dicts
+                temp = repmat(A1(:, q1), 1, num_dicts) + repmat(A2(:, q2)', num_dicts, 1) + squeeze(log_alpha(t-1, :, :)); % WARNING MIGHT HAVE TO INVERSE TRANSPOSE
+                temp = reshape(temp, num_dicts * num_dicts, 1)';
+                [max_val, max_ind] = max(temp);
+                temp_but_max = [temp(1:max_ind-1), temp(max_ind+1:end)];  
+
+                log_alpha(t, q1, q2) = P10_mat(t, q1, q2) ...
+                            + max_val + log(1 + sum(exp(temp_but_max - max_val)));
             end
         end
     end
-end
 
-for t = 1:T-1
-    for q1 = 1:num_dicts
-        for q2 = 1:num_dicts
-            temp = repmat(A1(q1, :)', 1, num_dicts) + repmat(A2(q2, :), num_dicts, 1) + squeeze(P10_mat(T-t+1, :, :)) + squeeze(log_beta(T-t+1, :, :)); 
-            temp = reshape(temp, num_dicts * num_dicts, 1)';
-            [max_val, max_ind] = max(temp);
-            temp_but_max = [temp(1:max_ind-1), temp(max_ind+1:end)];
-            log_beta(T-t, :, :) = max_val + log(1 + sum(exp(temp_but_max - max_val)));
-        end
-    end    
-end
-
-
-
-% Reminder P4_mat : P(f|z,q) 
-
-% Compute transistion probabilities
-tic()
-P9_mat = zeros(T, K, 2, num_freq, num_dicts, num_dicts); % P(zt, st| ft, q1, q2)
-for q1=1:num_dicts
-    for q2=1:num_dicts
-        for f = 1:num_freq
-            P9_mat(:, :, 1, f, q1, q2) = repmat(P4_mat1(f, :, q1), T, 1) .* P11_mat(:, :, 1, q1, q2);
-            P9_mat(:, :, 2, f, q1, q2) = repmat(P4_mat2(f, :, q2), T, 1) .* P11_mat(:, :, 2, q1, q2);
-            if any(any(P9_mat(:, :, 1, f, q1, q2) == 0))
-               assert(false) 
-            end            
-        end
+    for t = 1:T-1
+        for q1 = 1:num_dicts
+            for q2 = 1:num_dicts
+                temp = repmat(A1(q1, :)', 1, num_dicts) + repmat(A2(q2, :), num_dicts, 1) + squeeze(P10_mat(T-t+1, :, :)) + squeeze(log_beta(T-t+1, :, :)); 
+                temp = reshape(temp, num_dicts * num_dicts, 1)';
+                [max_val, max_ind] = max(temp);
+                temp_but_max = [temp(1:max_ind-1), temp(max_ind+1:end)];
+                log_beta(T-t, :, :) = max_val + log(1 + sum(exp(temp_but_max - max_val)));
+            end
+        end    
     end
-end
-P9_mat = P9_mat ./ repmat(sum(sum(P9_mat, 2), 3), 1, K, num_sources);
-toc()
-sum(sum(sum(sum(sum(sum(isnan(P9_mat)))))))
-'3'
+    if any(any(any(any(any(any(isnan(log_alpha)))))))
+        'log_alpha has NaN'
+        assert(false)
+    end    
+    if any(any(any(any(any(any(isnan(log_beta)))))))
+        'log_beta has NaN'
+        assert(false)
+    end
 
 
+    % Reminder P4_mat : P(f|z,q) 
 
-% Compute P8
-tic()
-P8_mat = zeros(T, K, num_sources, num_dicts, num_dicts, num_freq); % P(zt, st, q1, q2 | ft)
-temp = log_alpha + log_beta;
-temp = reshape(temp, T, num_dicts * num_dicts);
-max_val = max(temp');
+    % Compute transistion probabilities
+    P9_mat = zeros(T, K, 2, num_freq, num_dicts, num_dicts); % P(zt, st| ft, q1, q2)
+    %for q1=1:num_dicts
+    %    for q2=1:num_dicts
+    %        for f = 1:num_freq
+    %            P9_mat(:, :, 1, f, q1, q2) = repmat(P4_mat1(f, :, q1), T, 1) .* P11_mat(:, :, 1, q1, q2);
+    %            P9_mat(:, :, 2, f, q1, q2) = repmat(P4_mat2(f, :, q2), T, 1) .* P11_mat(:, :, 2, q1, q2);
+    %            if any(any(P9_mat(:, :, 1, f, q1, q2) == 0))
+    %               assert(false) 
+    %            end            
+    %        end
+    %    end
+    %end
+    
+    P9_part_1 = permute(repmat(P11_mat(:, :, 1, :, :), 1,1,1,1,1,num_freq), [1,2,6,4,5,3]);
+    P9_part_2 = permute(repmat(P4_mat1, 1,1,1, T, num_dicts), [4,2,1,3,5]);
+    P9_mat(:, :, 1, :, :, :) = P9_part_1 .* P9_part_2;
+    
+    P9_part_1 = permute(repmat(P11_mat(:, :, 2, :, :), 1,1,1,   1,1,num_freq), [1,2,6,4,5,3]);
+    P9_part_2 = permute(repmat(P4_mat2, 1,1,1, T, num_dicts), [4,2,1,5,3]); % Inversion 5-3 for q1, q2
+    P9_mat(:, :, 2, :, :, :) = P9_part_1 .* P9_part_2; 
+    clear P9_part_1 P9_part_2
 
-P8_mat_part1 = log_alpha + log_beta - repmat((max_val' + log(sum(exp(temp - repmat(max_val', 1, num_dicts * num_dicts)), 2))), 1, num_dicts, num_dicts);
-P8_mat = permute(repmat(P8_mat_part1, 1, 1, 1, K, num_sources, num_freq), [1,4,5,6,2,3]) + log(P9_mat);
-P8_mat = permute(P8_mat, [1,2,3,5,6,4]);
-toc()
-sum(sum(sum(sum(sum(sum(isnan(P8_mat)))))))
-'4'
+    P9_mat = P9_mat ./ repmat(sum(sum(P9_mat, 2), 3), 1, K, num_sources);
 
+    if any(any(any(any(any(any(isnan(P9_mat)))))))
+        'P9 has NaN'
+        assert(false)
+    end
 
-%
-tic()
-P11_mat = sum(permute(repmat(Vft, 1,1, K, num_sources, num_dicts, num_dicts), [1,3,4,5,6,2]) .* P8_mat, 6);
-P11_mat = P11_mat ./ repmat(sum(sum(P11_mat, 2), 3), 1, K, num_sources);
-sum(sum(sum(sum(sum(sum(isnan(P11_mat)))))))
-toc()   
-'5'
+    % Compute P8
+    P8_mat = zeros(T, K, num_sources, num_dicts, num_dicts, num_freq); % P(zt, st, q1, q2 | ft)
+    temp = log_alpha + log_beta;
+    temp = reshape(temp, T, num_dicts * num_dicts);
+    max_val = max(temp');
 
+    P8_mat_part1 = log_alpha + log_beta - repmat((max_val' + log(sum(exp(temp - repmat(max_val', 1, num_dicts * num_dicts)), 2))), 1, num_dicts, num_dicts);
+    P8_mat = permute(repmat(P8_mat_part1, 1, 1, 1, K, num_sources, num_freq), [1,4,5,6,2,3]) + log(P9_mat);
+    P8_mat = permute(P8_mat, [1,2,3,5,6,4]);
+    if any(any(any(any(any(any(isnan(P8_mat)))))))
+        'P8 has NaN'
+        assert(false)
+    end
 
-% State probabities % p(q1, q2 | Observations)
-temp = log_alpha + log_beta;
-temp = reshape(temp, T, num_dicts * num_dicts);
-max_val = max(temp');
-p_q1_q2 = log_alpha + log_beta - repmat((max_val' + log(sum(exp(temp - repmat(max_val', 1, num_dicts * num_dicts)), 2))), 1, num_dicts, num_dicts);
+    % Update P11_mat
+    P11_mat = sum(permute(repmat(Vft, 1,1, K, num_sources, num_dicts, num_dicts), [1,3,4,5,6,2]) .* exp(P8_mat), 6);
+    P11_mat = P11_mat + my_epsilon;
+    P11_mat = P11_mat ./ repmat(sum(sum(P11_mat, 2), 3), 1, K, num_sources);
+    if any(any(any(any(any(any(isnan(P11_mat)))))))
+        'P11 has NaN'
+        assert(false)
+    end
 
-temp = squeeze(p_q1_q2(1,:,:));
-max_val = max(temp, [], 2);
-Pi1 = max_val +  log(sum(exp(temp - repmat(max_val, 1, num_dicts)), 2));
+    % State probabities % p(q1, q2 | Observations)
+    temp = log_alpha + log_beta;
+    temp = reshape(temp, T, num_dicts * num_dicts);
+    max_val = max(temp');
+    p_q1_q2 = log_alpha + log_beta - repmat((max_val' + log(sum(exp(temp - repmat(max_val', 1, num_dicts * num_dicts)), 2))), 1, num_dicts, num_dicts);
 
-temp = squeeze(p_q1_q2(1,:,:))';
-max_val = max(temp, [], 2);
-Pi2 = max_val +  log(sum(exp(temp - repmat(max_val, 1, num_dicts)), 2));
+    if any(any(any(any(any(any(isnan(p_q1_q2)))))))
+        'p_q1_q2 has NaN'
+        assert(false)
+    end    
+    
+    % Update Pi1, Pi2
+    temp = squeeze(p_q1_q2(1,:,:));
+    max_val = max(temp, [], 2);
+    Pi1 = max_val +  log(sum(exp(temp - repmat(max_val, 1, num_dicts)), 2));
 
+    temp = squeeze(p_q1_q2(1,:,:))';
+    max_val = max(temp, [], 2);
+    Pi2 = max_val +  log(sum(exp(temp - repmat(max_val, 1, num_dicts)), 2));
+
+    %temp = log_alpha + log_beta;
+    %temp = reshape(temp, T, num_dicts * num_dicts);
+    %max_val = max(temp');
+    %log_likelihood = max_val' + log(sum(exp(temp - repmat(max_val', 1, num_dicts * num_dicts)), 2));
+ 
+    yyy = 1;
+    temp = log_alpha(yyy,:,:) + log_beta(yyy,:,:);
+    temp = reshape(temp, 1, num_dicts * num_dicts);
+    [max_val, max_ind] = max(temp);
+    temp_but_max = [temp(1:max_ind-1), temp(max_ind+1:end)];
+    log_likelihood = max_val + log(1 + sum(exp(temp_but_max - max_val)))    
+    
+    
+    log_likelihoods = [log_likelihoods, log_likelihood(1)];
+    fprintf('Log-likelihood at iteration %d is : %d\n', xxx, log_likelihood);
+    toc()
+end % end loop
 
 
 %%%%%%%%%
@@ -241,6 +283,10 @@ p_final(:, 2, :) = sum(sum(permute(repmat(exp(p_q1_q2), 1, 1, 1, num_freq), [1, 
 clear p_final_part_1 p_final_part_2
 
 p_final = p_final ./ repmat(sum(p_final, 2), 1, 2);
+
+
+save('my_separation.mat', 'Vft1_test', 'Vft2_test', 'Vft', 'p_final')
+
 
 
 if false
