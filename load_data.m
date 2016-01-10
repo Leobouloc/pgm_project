@@ -82,11 +82,15 @@ switch(int_size)
     case 8
         int_test_spectrogram1 = im2uint8(test_spectrogram1);
         int_test_spectrogram2 = im2uint8(test_spectrogram2);
-        int_mixture_spectrogram = im2uint8(mixture_spectrogram);
+        %int_mixture_spectrogram = im2uint8(mixture_spectrogram);
     case 16
         int_test_spectrogram1 = im2uint16(test_spectrogram1);
         int_test_spectrogram2 = im2uint16(test_spectrogram2);
-        int_mixture_spectrogram = im2uint16(mixture_spectrogram);
+        %int_mixture_spectrogram = im2uint16(mixture_spectrogram);
     otherwise
         error('Only depths of 8 bits and 16 bits were implemented.');
+end
+
+int_mixture_spectrogram = int_test_spectrogram1 + int_test_spectrogram2;
+
 end
