@@ -1,4 +1,4 @@
-function [spectrogram, window_size, hop_size, sr, T] = get_training_spectrogram(speaker_id, training_folder, training_samples_proportion)
+function [spectrogram, audio, window_size, hop_size, sr, T] = get_training_spectrogram(speaker_id, training_folder, training_samples_proportion)
 
 [audio, sr] = get_training_audio(speaker_id, training_folder, training_samples_proportion);
 T = length(audio);
