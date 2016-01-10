@@ -1,5 +1,7 @@
-function [int_train_spectrogram1, int_train_spectrogram2, ...
-          int_test_spectrogram1, int_test_spectrogram2, int_mixture_spectrogram, int_size, complex_mixture_spectrogram, sr, g, hop_size, window_size] = load_data(display_bool)
+function [int_train_spectrogram1, train_audio1, int_train_spectrogram2, train_audio2, ...
+          int_test_spectrogram1, test_audio1, int_test_spectrogram2, test_audio2, ...
+          int_mixture_spectrogram, audio_mixture, ...
+          int_size, complex_mixture_spectrogram, sr, g, hop_size, window_size] = load_data(display_bool)
 
 close all
 
@@ -37,8 +39,8 @@ speaker2 = 25; % Emma <3
 % Training data %
 %%%%%%%%%%%%%%%%%
 
-[train_spectrogram1, ~, ~, sr1, T1] = get_training_spectrogram(speaker1, training_folder, training_samples_proportion);
-[train_spectrogram2, ~, ~, sr2, T2] = get_training_spectrogram(speaker2, training_folder, training_samples_proportion);
+[train_spectrogram1, train_audio1, ~, ~, sr1, T1] = get_training_spectrogram(speaker1, training_folder, training_samples_proportion);
+[train_spectrogram2, train_audio2, ~, ~, sr2, T2] = get_training_spectrogram(speaker2, training_folder, training_samples_proportion);
 
 if sr1 == sr2
     sr = sr1;
