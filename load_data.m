@@ -1,5 +1,5 @@
 function [int_train_spectrogram1, int_train_spectrogram2, ...
-          int_test_spectrogram1, int_test_spectrogram2, int_mixture_spectrogram, int_size] = load_data(display_bool)
+          int_test_spectrogram1, int_test_spectrogram2, int_mixture_spectrogram, int_size, complex_mixture_spectrogram, sr, g, hop_size, window_size] = load_data(display_bool)
 
 close all
 
@@ -68,7 +68,7 @@ end
 % Test data %
 %%%%%%%%%%%%%
 
-[mixture_spectrogram, audio_mixture, test_spectrogram1, test_audio1, test_spectrogram2, test_audio2, sr, T] = merge_test_sounds(speaker1, speaker2, test_folder, randomize_mixture_order, test_samples_proportion);
+[mixture_spectrogram, complex_mixture_spectrogram, audio_mixture, test_spectrogram1, test_audio1, test_spectrogram2, test_audio2, sr, T, g, hop_size, window_size] = merge_test_sounds(speaker1, speaker2, test_folder, randomize_mixture_order, test_samples_proportion);
 
 if display
     % Listen to the sounds (plays all at once, 'clear all' to stop)
