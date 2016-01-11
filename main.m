@@ -290,8 +290,8 @@ P_final = P_final ./ repmat(sum(P_final, 2), 1, 2);
 
 
 save('my_separation.mat', 'Vft1_test', 'Vft2_test', 'Vft', 'P_final')
-mixture_weights_to_audio(squeeze(P_final(1:T-1, 1, :)), Vft_complex, sr, g, hop_size, window_size)
-
+[audio1, audio2] = mixture_weights_to_audio(squeeze(P_final(1:T-1, 1, :)), Vft_complex, sr, g, hop_size, window_size);
+soundsc(audio1, sr);
 
 if false
 % Display dictionaries
