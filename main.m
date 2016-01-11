@@ -7,6 +7,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all
 
+file_suffix = '1';
+
 % Data (generate and save: 1, or load from save: 0)
 generate = 1;
 if generate
@@ -41,7 +43,7 @@ Vft = preprocess_Vft(Vft);
 
 % Set Parameters
 K = 3; % Number of vectors per dictionary ; num latent components ; num phonems
-num_dicts = 8; % Number of dictionaries
+num_dicts = 10; % Number of dictionaries
 
 % For smoothing in single source EM
 my_epsilon = 10^-10;
@@ -54,7 +56,7 @@ verbose = 1;
 
 
 %%%%
-compute_single_EM = 1;
+compute_single_EM = 1   ;
 if compute_single_EM
     % Actual EM single source here
     [P4_mat1, ~, mu_vq1, sigma_vq1, A1, Pi1, log_likelihoods1, T1, num_freq1] = EM_single_source(Vft1, K, num_dicts, num_iterations_single_source, my_epsilon, verbose);
@@ -65,6 +67,8 @@ else
     load('profiles.mat');
 end
 %%%%
+
+fprintf('********\nNow Separating Sources\n************\n')
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -100,7 +104,7 @@ P11_mat = P11_mat ./ repmat(sum(sum(P11_mat, 2), 3), 1, K, num_sources);
 % Compute log_likelihood
 log_likelihoods = [];
 
-num_iterations = 5;
+num_iterations = 10;
 for xxx = 1:num_iterations
     fprintf('*****************\n')
     tic()
