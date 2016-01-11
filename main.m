@@ -7,12 +7,23 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 clear all
 
-file_suffix = '1';
-
 % Parameters 
-generate = 1; % (generate and save: 1, or load from save: 0)
+generate = 0; % (generate and save: 1, or load from save: 0)
 compute_single_EM = 1; % (generate and save: 1, or load from save: 0)
 separation_num_iterations = 10;
+
+% Set Parameters
+K = 4; % Number of vectors per dictionary ; num latent components ; num phonems
+num_dicts = 16; % Number of dictionaries
+
+% For smoothing in single source EM
+my_epsilon = 10^-10;
+
+% Number of iterations for single source EM
+num_iterations_single_source = 10;
+
+% Display progression (Yes or No)
+verbose = 1;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -46,19 +57,12 @@ Vft1_test = preprocess_Vft(Vft1_test);
 Vft2_test = preprocess_Vft(Vft2_test);
 Vft = preprocess_Vft(Vft);
 
+T_temp = 200;
+Vft1_test = Vft1_test(1:T_temp, :);
+Vft2_test = Vft2_test(1:T_temp, :);
+Vft = Vft(1:T_temp, :);
+Vft_complex = Vft_complex(:, 1:T_temp);
 
-% Set Parameters
-K = 3; % Number of vectors per dictionary ; num latent components ; num phonems
-num_dicts = 10; % Number of dictionaries
-
-% For smoothing in single source EM
-my_epsilon = 10^-10;
-
-% Number of iterations for single source EM
-num_iterations_single_source = 10;
-
-% Display progression (Yes or No)
-verbose = 1;
 
 
 
@@ -73,7 +77,7 @@ else
 end
 %%%%
 
-fprintf('********\nNow Separating Sources\n************\n')
+fprintf('*----------------\nNow Separating Sources\n*----------------\n')
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -123,11 +127,11 @@ for xxx = 1:separation_num_iterations
         end
     end
     if any(any(any(any(any(any(P10_mat == -Inf))))))
-        'log_beta has -Inf'
+        'P10 has -Inf'
         assert(false)
     end    
     if any(any(any(any(any(any(isnan(P10_mat)))))))
-        'log_beta has NaN'
+        'P10 has NaN'
         assert(false)
     end
 
@@ -290,7 +294,7 @@ P_final = P_final ./ repmat(sum(P_final, 2), 1, 2);
 
 
 save('my_separation.mat', 'Vft1_test', 'Vft2_test', 'Vft', 'P_final')
-[audio1, audio2] = mixture_weights_to_audio(squeeze(P_final(1:T-1, 1, :)), Vft_complex, sr, g, hop_size, window_size);
+[audio1, audio2] = mixture_weights_to_audio(squeeze(P_final(1:T, 1, :)), Vft_complex, sr, g, hop_size, window_size);
 soundsc(audio1, sr);
 
 if false

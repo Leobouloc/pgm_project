@@ -57,7 +57,7 @@ for xxx = 1:num_iterations
 
     if any(any(any(isnan(P3_mat))))    
         'NaNs at 0'
-        break
+        assert(false)
     end
 
     % 2.2 - Compute alpha, beta
@@ -88,12 +88,12 @@ for xxx = 1:num_iterations
     
     if any(any(any(isnan(log_alpha))))
         'NaNs at 1'
-        break
+        assert(false)
     end
     
     if any(any(any(isnan(log_beta))))
         'NaNs at 2'
-        break
+        assert(false)
     end
 
     % 2.3 - Compute probabilites (P1_mat, P2_mat)
@@ -118,7 +118,7 @@ for xxx = 1:num_iterations
     
     if any(any(any(isnan(p_qt))))
         'NaNs at 3'
-        break
+        assert(false)
     end
 
     % Probability of state transition
@@ -146,7 +146,7 @@ for xxx = 1:num_iterations
     
     if any(any(any(isnan(p_qt_qt_plus_one))))
         'NaNs at 4'
-        break
+        assert(false)
     end
 
     % P2_mat : P(zt, ft | qt (Vect)
@@ -168,7 +168,7 @@ for xxx = 1:num_iterations
     
     if any(any(any(any(isnan(P2_mat)))))
         'NaNs at 5'
-        break
+        assert(false)
     end
     
     % P1_mat : P(zt, qt | ft, f_bold, v_bold)
@@ -181,7 +181,7 @@ for xxx = 1:num_iterations
     
     if any(any(any(any(isnan(P1_mat)))))
         'NaNs at 6'
-        break
+        assert(false)
     end
     
     % Update P4_mat
@@ -199,7 +199,7 @@ for xxx = 1:num_iterations
 
     if any(any(any(isnan(P4_mat))))
         'NaNs at 7'
-        break
+        assert(false)
     end
     
     P5_mat = zeros(T, K, num_dicts); % p(z|q)
@@ -214,7 +214,7 @@ for xxx = 1:num_iterations
     
     if any(any(any(isnan(P5_mat))))
         'NaNs at 8'
-        break
+        assert(false)
     end
 
     % Update mu_vq
@@ -248,7 +248,7 @@ for xxx = 1:num_iterations
 
     if any(any(isnan(A)))
         'NaNs at 10'
-        break
+        assert(false)
     end
 
     [min(min(min(min(P1_mat)))), min(min(min(min(P2_mat)))), min(min(min(min(P3_mat)))), min(min(min(min(P4_mat)))), min(min(min(min(P5_mat))))]
