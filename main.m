@@ -9,8 +9,14 @@ clear all
 
 file_suffix = '1';
 
-% Data (generate and save: 1, or load from save: 0)
-generate = 1;
+% Parameters 
+generate = 1; % (generate and save: 1, or load from save: 0)
+compute_single_EM = 1; % (generate and save: 1, or load from save: 0)
+separation_num_iterations = 10;
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if generate
     
 [Vft1, train_audio1, Vft2, train_audio2, ...
@@ -55,8 +61,7 @@ num_iterations_single_source = 10;
 verbose = 1;
 
 
-%%%%
-compute_single_EM = 1   ;
+
 if compute_single_EM
     % Actual EM single source here
     [P4_mat1, ~, mu_vq1, sigma_vq1, A1, Pi1, log_likelihoods1, T1, num_freq1] = EM_single_source(Vft1, K, num_dicts, num_iterations_single_source, my_epsilon, verbose);
@@ -101,11 +106,10 @@ P11_mat = ones(T, K, num_sources, num_dicts, num_dicts) + rand(T, K, num_sources
 P11_mat = P11_mat ./ repmat(sum(sum(P11_mat, 2), 3), 1, K, num_sources);
 
 
-% Compute log_likelihood
+% To store log_likelihoods
 log_likelihoods = [];
 
-num_iterations = 10;
-for xxx = 1:num_iterations
+for xxx = 1:separation_num_iterations
     fprintf('*****************\n')
     tic()
     P10_mat = zeros(T, num_dicts, num_dicts); % P(ft_bold, vt | qt)
